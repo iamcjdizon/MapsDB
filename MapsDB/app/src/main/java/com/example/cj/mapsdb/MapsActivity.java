@@ -35,7 +35,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        mDatabase = FirebaseDatabase.getInstance().getReference();
+
+        mDatabase = FirebaseDatabase.getInstance().getReference(); //get the instance of the firebase database
     }
 
     @Override
@@ -52,28 +53,32 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapLongClick(LatLng point) {
         mMap.addMarker(new MarkerOptions()
-                .position(point));
+                .position(point)); // Adds marker when upon long click.
 
-        Geocoder geocoder = new Geocoder(this);
-        List<Address> addressList = null;
+        Geocoder geocoder = new Geocoder(this); //initialized geocoder
+        List<Address> addressList = null; //initialized addreslist
         try {
-            addressList = geocoder.getFromLocation(point.latitude, point.longitude, 1);
+            addressList = geocoder.getFromLocation(point.latitude, point.longitude, 1); // returns address based on latitude and longitude
         }
-        catch (IOException e)
+        catch (IOException e) //Di ko alam to. hahaha. Lols
         {
             e.printStackTrace();
         }
 
-        String vName = addressList.get(0).getAddressLine(0);
+        String vName = addressList.get(0).getAddressLine(0); // Stored the street addtress into the vName variable.
 
-        VerticesDB verticesDB = new VerticesDB(vName, point.latitude, point.longitude);
-        verticesDB.forAddress();
-        mDatabase.child("vertex").child(verticesDB.vID).setValue(verticesDB);
+        VerticesDB verticesDB = new VerticesDB(vName, point.latitude, point.longitude); //initalized the class with vName, lat, long as constructors.
+        verticesDB.forAddress(); //calls the method.
+        mDatabase.child("vertex").child(verticesDB.vID).setValue(verticesDB); //posts or uploads the public variables in the class.
+        //the vertex represents the table name.
+        //the vID represents the Primary Key
+        //verticesDB represetns the public variables and acts as table entry.
 
         mDatabase.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                Toast.makeText(MapsActivity.this,"SAVED", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MapsActivity.this,"SAVED", Toast.LENGTH_SHORT).show(); //notification to know if it is posted.
+                //pero feel ko may bug pa.
             }
 
             @Override
