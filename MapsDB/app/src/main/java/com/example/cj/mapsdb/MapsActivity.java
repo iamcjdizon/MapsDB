@@ -19,6 +19,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -33,11 +34,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private GoogleMap mMap;
     private DatabaseReference mDatabase;
-    private Marker mark1, mark2;
-    private Button btnDistance,btnAdd, btnSave;
+    private Marker mark1=null, mark2=null, mark=null;
+    private Button btnDistance, btnSave, btnClear;
     private Context context = this;
     private LatLng pointer;
     float[] distance = new float[3];
+    String vName, startVertex, endVertex;
+    VerticesDB vertex;
 
 
     @Override
@@ -51,8 +54,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mDatabase = FirebaseDatabase.getInstance().getReference(); //get the instance of the firebase database
         btnDistance = (Button) findViewById(R.id.btnDistance);
-        btnAdd = (Button) findViewById(R.id.btnAdd);
         btnSave = (Button) findViewById(R.id.btnSave);
+        btnClear = (Button) findViewById(R.id.btnClear);
     }
 
     @Override
@@ -67,59 +70,89 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     @Override
-    public void onMapLongClick(final LatLng point) {
-        mMap.addMarker(new MarkerOptions()
-                .position(point)); // Adds marker when upon long click.
-        pointer = point;
+    public void onMapLongClick(LatLng point) {
+        mMap.addMarker(new MarkerOptions().position(point)); // Adds marker when upon long click.
 
 
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener(){
 
             @Override
             public boolean onMarkerClick(Marker marker) {
+//                mark = marker;
+                btnSave.setAlpha(1f);
+//                btnAdd.setAlpha(1f);
+                vName = getAddress(marker);
+                vertex = new VerticesDB(vName, marker.getPosition().latitude, marker.getPosition().longitude); //initalized the class with vName, lat, long as constructors.
+                vertex.forAddress();
+
                 if (mark1 == null)
                 {
                     mark1 = marker;
                     mark1.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
+                    startVertex = vertex.vID;
+
                 }
 
                 else if (marker != mark1)
                 {
                     mark2 = marker;
                     mark2.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+                    endVertex = vertex.vID;
+
                     btnDistance.setAlpha(1f);
+                    btnClear.setAlpha(1f);
                 }
+
                 return false;
+
             }
         });
+
 
         btnDistance.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Location.distanceBetween(mark1.getPosition().latitude, mark1.getPosition().longitude,
                         mark2.getPosition().latitude, mark2.getPosition().longitude, distance);
-                Toast.makeText( MapsActivity.this, "Distance is "+ distance[2] + " m", Toast.LENGTH_SHORT).show();
+                PathsDB path = new PathsDB(startVertex, endVertex, Math.abs(distance[0]));
+                mDatabase.child("path").push().setValue(path);
+
+                mDatabase.addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        Toast.makeText(MapsActivity.this, "SAVED", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+
+                mMap.addPolyline(new PolylineOptions().add(
+                        new LatLng(mark1.getPosition().latitude, mark1.getPosition().longitude),
+                        new LatLng(mark2.getPosition().latitude, mark2.getPosition().longitude)
+                ));
+            }
+        });
+
+        btnClear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mark1.setIcon(BitmapDescriptorFactory.defaultMarker());
+                mark2.setIcon(BitmapDescriptorFactory.defaultMarker());
+                mark1 = null;
+                mark2 = null;
+                btnDistance.setAlpha(0f);
+                btnClear.setAlpha(0f);
             }
         });
 
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Geocoder geocoder = new Geocoder(context); //initialized geocoder
-                List<Address> addressList = null; //initialized addreslist
-                try {
-                    addressList = geocoder.getFromLocation(point.latitude, point.longitude, 1); // returns address based on latitude and longitude
-                }
-                catch (IOException e) //Di ko alam to. hahaha. Lols
-                {
-                    e.printStackTrace();
-                }
 
-                String vName = addressList.get(0).getAddressLine(0); // Stored the street addtress into the vName variable.
-
-                VerticesDB verticesDB = new VerticesDB(vName, point.latitude, point.longitude); //initalized the class with vName, lat, long as constructors.
-                verticesDB.forAddress(); //calls the method.
-                mDatabase.child("vertex").child(verticesDB.vID).setValue(verticesDB); //posts or uploads the public variables in the class.
+                mDatabase.child("vertex").child(vertex.vID).setValue(vertex); //posts or uploads the public variables in the class.
                 //the vertex represents the table name.
                 //the vID represents the Primary Key
                 //verticesDB represents the public variables and acts as table entry.
@@ -136,9 +169,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     }
                 });
+
             }
         });
 
 
+
     }
+
+    public String getAddress(Marker marker)
+    {
+        Geocoder geocoder = new Geocoder(context); //initialized geocoder
+        List<Address> addressList = null; //initialized addreslist
+        try {
+            addressList = geocoder.getFromLocation(marker.getPosition().latitude, marker.getPosition().longitude, 1); // returns address based on latitude and longitude
+        }
+        catch (IOException e) //Di ko alam to. hahaha. Lols
+        {
+            e.printStackTrace();
+        }
+
+        return addressList.get(0).getAddressLine(0); // Stored the street addtress into the vName variable.
+    }
+
 }

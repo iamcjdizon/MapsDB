@@ -27,18 +27,6 @@
         android:layout_marginStart="30dp" />
 
     <Button
-        android:id="@+id/btnAdd"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/btnDistance"
-        android:layout_marginLeft="27dp"
-        android:layout_marginStart="27dp"
-        android:layout_toEndOf="@+id/btnDistance"
-        android:layout_toRightOf="@+id/btnDistance"
-        android:alpha="0"
-        android:text="ADD" />
-
-    <Button
         android:id="@+id/btnSave"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -47,7 +35,18 @@
         android:layout_alignParentRight="true"
         android:layout_marginEnd="20dp"
         android:layout_marginRight="20dp"
+        android:alpha="0"
         android:text="SAVE" />
+
+    <Button
+        android:id="@+id/btnClear"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/btnAdd"
+        android:layout_alignStart="@+id/btnAdd"
+        android:layout_alignTop="@+id/btnAdd"
+        android:alpha="0"
+        android:text="Clear" />
 
 
 </RelativeLayout>
