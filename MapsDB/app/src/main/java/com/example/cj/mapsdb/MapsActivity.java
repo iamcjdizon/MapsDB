@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback,
-        GoogleMap.OnMapClickListener, GoogleMap.OnMarkerDragListener{
+        GoogleMap.OnMapClickListener, GoogleMap.OnMarkerDragListener, GoogleMap.OnMarkerClickListener{
 
     private GoogleMap mMap;
     private DatabaseReference mDatabase;
@@ -59,6 +59,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnSave = (Button) findViewById(R.id.btnSave);
         btnClear = (Button) findViewById(R.id.btnClear);
         getVertexDB();
+        getPathDB();
     }
 
     @Override
@@ -71,46 +72,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         //mMap.addMarker(new MarkerOptions().position(manila).title("Marker in Luneta"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(manila, 17));
         mMap.setOnMapClickListener(this);
+        mMap.setOnMarkerClickListener(this);
         mMap.setOnMarkerDragListener(this);
-    }
-
-    @Override
-    public void onMapClick(LatLng point) {
-        mMap.addMarker(new MarkerOptions().position(point).draggable(true)); // Adds marker when upon long click.
-
-
-        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener(){
-
-            @Override
-            public boolean onMarkerClick(Marker marker) {
-                mark = marker;
-                btnSave.setAlpha(1f);
-                vName = getAddress(marker);
-                vertex = new VerticesDB(vName, marker.getPosition().latitude, marker.getPosition().longitude); //initalized the class with vName, lat, long as constructors.
-                marker.setTitle(vName);
-                if (mark1 == null)
-                {
-                    mark1 = marker;
-                    mark1.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
-                    startVertex = vertex.vID;
-
-                }
-
-                else if (marker != mark1)
-                {
-                    mark2 = marker;
-                    mark2.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
-                    endVertex = vertex.vID;
-
-                    btnDistance.setAlpha(1f);
-                    btnClear.setAlpha(1f);
-                }
-
-                return false;
-
-            }
-        });
-
 
         btnDistance.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -142,20 +105,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnClear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mark1.setIcon(BitmapDescriptorFactory.defaultMarker());
-                mark2.setIcon(BitmapDescriptorFactory.defaultMarker());
+                mark1.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN));
+                mark2.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN));
                 mark1 = null;
                 mark2 = null;
                 btnDistance.setAlpha(0f);
                 btnClear.setAlpha(0f);
             }
         });
+    }
+
+    @Override
+    public void onMapClick(LatLng point) {
+        mMap.addMarker(new MarkerOptions().position(point).draggable(true)); // Adds marker when upon long click.
 
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                mDatabase.child("vertex").child(vertex.vID).setValue(vertex); //posts or uploads the public variables in the class.
+                mDatabase.child("vertex").child(vertex.getvID()).setValue(vertex); //posts or uploads the public variables in the class.
                 //the vertex represents the table name.
                 //the vID represents the Primary Key
                 //verticesDB represents the public variables and acts as table entry.
@@ -208,8 +176,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         vertices.setVertexLong(ds.child("").getValue(VerticesDB.class).getVertexLong());
                         vertices.setvName(ds.child("").getValue(VerticesDB.class).getvName());
                         mMap.addMarker(new MarkerOptions()
-                                .position(new LatLng(vertices.vertexLat, vertices.vertexLong))
-                                .title(vertices.vName)
+                                .position(new LatLng(vertices.getVertexLat(), vertices.getVertexLong()))
+                                .title(vertices.getvName())
                                 .draggable(true)
                                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
                     }
@@ -220,13 +188,36 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 }
             });
-        //}
-        //catch (NullPointerException e)
-        //{
-
-        //}
 
     }
+
+    public void getPathDB()
+    {
+        mDatabase.child("path").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for (DataSnapshot ds :dataSnapshot.getChildren())
+                {
+                    PathsDB paths = new PathsDB();
+                    paths.setStartingNode(ds.child("").getValue(PathsDB.class).getStartingNode());
+                    paths.setFinalNode(ds.child("").getValue(PathsDB.class).getFinalNode());
+
+                    mMap.addPolyline(new PolylineOptions().add(
+                            new LatLng(paths.vertexLat(paths.getStartingNode()), paths.vertexLong(paths.getStartingNode())),
+                            new LatLng(paths.vertexLat(paths.getFinalNode()), paths.vertexLong(paths.getFinalNode()))
+                    ));
+                }
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+
 
     @Override
     public void onMarkerDragStart(Marker marker) {
@@ -241,5 +232,33 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMarkerDragEnd(Marker marker) {
 
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        mark = marker;
+        btnSave.setAlpha(1f);
+        vName = getAddress(marker);
+        vertex = new VerticesDB(vName, marker.getPosition().latitude, marker.getPosition().longitude); //initalized the class with vName, lat, long as constructors.
+        marker.setTitle(vName);
+        if (mark1 == null)
+        {
+            mark1 = marker;
+            mark1.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
+            startVertex = vertex.getvID();
+
+        }
+
+        else if (marker != mark1)
+        {
+            mark2 = marker;
+            mark2.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+            endVertex = vertex.getvID();
+
+            btnDistance.setAlpha(1f);
+            btnClear.setAlpha(1f);
+        }
+
+        return false;
     }
 }

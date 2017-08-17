@@ -21,32 +21,33 @@
         android:alpha="0"
         android:text="Calculate"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginLeft="30dp"
-        android:layout_marginStart="30dp" />
+        android:layout_toLeftOf="@+id/btnClear"
+        android:layout_toStartOf="@+id/btnClear"
+        android:layout_marginRight="19dp"
+        android:layout_marginEnd="19dp" />
 
     <Button
         android:id="@+id/btnSave"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/btnAdd"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginEnd="20dp"
-        android:layout_marginRight="20dp"
         android:alpha="0"
-        android:text="SAVE" />
+        android:text="SAVE"
+        android:layout_alignBaseline="@+id/btnClear"
+        android:layout_alignBottom="@+id/btnClear"
+        android:layout_toRightOf="@+id/btnClear"
+        android:layout_toEndOf="@+id/btnClear"
+        android:layout_marginLeft="23dp"
+        android:layout_marginStart="23dp" />
 
     <Button
         android:id="@+id/btnClear"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/btnAdd"
-        android:layout_alignStart="@+id/btnAdd"
-        android:layout_alignTop="@+id/btnAdd"
         android:alpha="0"
-        android:text="Clear" />
+        android:text="Clear"
+        android:layout_alignBaseline="@+id/btnDistance"
+        android:layout_alignBottom="@+id/btnDistance"
+        android:layout_centerHorizontal="true" />
 
 
 </RelativeLayout>
