@@ -20,6 +20,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -27,17 +28,18 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback,
-        GoogleMap.OnMapLongClickListener{
+        GoogleMap.OnMapClickListener, GoogleMap.OnMarkerDragListener{
 
     private GoogleMap mMap;
     private DatabaseReference mDatabase;
-    private Marker mark1=null, mark2=null, mark=null;
+    private Marker mark1=null, mark2=null, mark;
     private Button btnDistance, btnSave, btnClear;
     private Context context = this;
-    private LatLng pointer;
     float[] distance = new float[3];
     String vName, startVertex, endVertex;
     VerticesDB vertex;
@@ -56,35 +58,36 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnDistance = (Button) findViewById(R.id.btnDistance);
         btnSave = (Button) findViewById(R.id.btnSave);
         btnClear = (Button) findViewById(R.id.btnClear);
+        getVertexDB();
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+
         // Add a marker in Luneta and move the camera
         LatLng manila = new LatLng(14.583118, 120.979417);
-        mMap.addMarker(new MarkerOptions().position(manila).title("Marker in Luneta"));
+        //mMap.addMarker(new MarkerOptions().position(manila).title("Marker in Luneta"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(manila, 17));
-        mMap.setOnMapLongClickListener(this);
+        mMap.setOnMapClickListener(this);
+        mMap.setOnMarkerDragListener(this);
     }
 
     @Override
-    public void onMapLongClick(LatLng point) {
-        mMap.addMarker(new MarkerOptions().position(point)); // Adds marker when upon long click.
+    public void onMapClick(LatLng point) {
+        mMap.addMarker(new MarkerOptions().position(point).draggable(true)); // Adds marker when upon long click.
 
 
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener(){
 
             @Override
             public boolean onMarkerClick(Marker marker) {
-//                mark = marker;
+                mark = marker;
                 btnSave.setAlpha(1f);
-//                btnAdd.setAlpha(1f);
                 vName = getAddress(marker);
                 vertex = new VerticesDB(vName, marker.getPosition().latitude, marker.getPosition().longitude); //initalized the class with vName, lat, long as constructors.
-                vertex.forAddress();
-
+                marker.setTitle(vName);
                 if (mark1 == null)
                 {
                     mark1 = marker;
@@ -169,7 +172,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     }
                 });
-
+                mark.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN));
             }
         });
 
@@ -192,4 +195,51 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return addressList.get(0).getAddressLine(0); // Stored the street addtress into the vName variable.
     }
 
+    public void getVertexDB()
+    {
+        //try{
+            mDatabase.child("vertex").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    for (DataSnapshot ds : dataSnapshot.getChildren())
+                    {
+                        VerticesDB vertices = new VerticesDB();
+                        vertices.setVertexLat(ds.child("").getValue(VerticesDB.class).getVertexLat());
+                        vertices.setVertexLong(ds.child("").getValue(VerticesDB.class).getVertexLong());
+                        vertices.setvName(ds.child("").getValue(VerticesDB.class).getvName());
+                        mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(vertices.vertexLat, vertices.vertexLong))
+                                .title(vertices.vName)
+                                .draggable(true)
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+        //}
+        //catch (NullPointerException e)
+        //{
+
+        //}
+
+    }
+
+    @Override
+    public void onMarkerDragStart(Marker marker) {
+
+    }
+
+    @Override
+    public void onMarkerDrag(Marker marker) {
+
+    }
+
+    @Override
+    public void onMarkerDragEnd(Marker marker) {
+
+    }
 }
