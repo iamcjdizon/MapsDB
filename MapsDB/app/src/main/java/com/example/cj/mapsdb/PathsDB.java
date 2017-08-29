@@ -9,6 +9,7 @@ public class PathsDB {
     private String startingNode;
     private String finalNode;
     private Double distance;
+    private String pathID = "";
 
     public PathsDB()
     {
@@ -20,6 +21,7 @@ public class PathsDB {
         this.startingNode = startingNode;
         this.finalNode = finalNode;
         this.distance = distance;
+        forAddress();
     }
 
     public String getStartingNode() {return startingNode;}
@@ -28,6 +30,8 @@ public class PathsDB {
     public void setDistance(Double distance) {this.distance = distance;}
     public void setFinalNode(String finalNode) {this.finalNode = finalNode;}
     public void setStartingNode(String startingNode) {this.startingNode = startingNode;}
+    public String getPathID(){return pathID;}
+    public void setPathID(String pathID) {this.pathID = pathID;}
 
     public double vertexLat(String startingNode)
     {
@@ -50,6 +54,18 @@ public class PathsDB {
                 longi[x] = '.';
 
         return Double.parseDouble(String.valueOf(longi));
+    }
+
+    public void forAddress() //method inorder to create unique id for each vertex.
+    {
+
+        pathID = String.valueOf(vertexLat(getStartingNode())) + "x" + String.valueOf(vertexLat(getFinalNode())) ;
+        char[] forVID = pathID.toCharArray();
+        for (int x=0; x<forVID.length; x++)
+            if (forVID[x] == '.')
+                forVID[x] = ',';
+        pathID = String.valueOf(forVID);
+        //based on the example above. the resulting vID will be 31GMS
     }
 
 }

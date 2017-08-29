@@ -28,6 +28,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +82,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Location.distanceBetween(mark1.getPosition().latitude, mark1.getPosition().longitude,
                         mark2.getPosition().latitude, mark2.getPosition().longitude, distance);
                 PathsDB path = new PathsDB(startVertex, endVertex, Math.abs(distance[0]));
-                mDatabase.child("path").push().setValue(path);
+                mDatabase.child("path").child(path.getPathID()).setValue(path);
 
                 mDatabase.addValueEventListener(new ValueEventListener() {
                     @Override
@@ -196,6 +197,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mDatabase.child("path").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+
+                List<PathsDB> pathsList = new ArrayList<PathsDB>();
                 for (DataSnapshot ds :dataSnapshot.getChildren())
                 {
                     PathsDB paths = new PathsDB();
@@ -206,7 +209,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             new LatLng(paths.vertexLat(paths.getStartingNode()), paths.vertexLong(paths.getStartingNode())),
                             new LatLng(paths.vertexLat(paths.getFinalNode()), paths.vertexLong(paths.getFinalNode()))
                     ));
+
+                    pathsList.add(paths);
                 }
+
+
+
 
             }
 
@@ -240,8 +248,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnSave.setAlpha(1f);
         vName = getAddress(marker);
         vertex = new VerticesDB(vName, marker.getPosition().latitude, marker.getPosition().longitude); //initalized the class with vName, lat, long as constructors.
-        marker.setTitle(vName);
-        if (mark1 == null)
+        marker.setTitle(String.valueOf(marker.getPosition().latitude));
+        if (mark1 == null) //14.58125x14.5815236
         {
             mark1 = marker;
             mark1.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
